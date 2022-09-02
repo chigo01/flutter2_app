@@ -14,10 +14,8 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Personal Expenses',
-      home: MyHomePage(),
+      home: const MyHomePage(),
       theme: ThemeData(
-        primarySwatch: Colors.purple,
-        accentColor: Colors.amber,
         fontFamily: 'Quicksand',
         textTheme: ThemeData.light().textTheme.copyWith(
               titleSmall: const TextStyle(
@@ -27,12 +25,29 @@ class MyApp extends StatelessWidget {
               ),
             ),
         appBarTheme: AppBarTheme(
-          textTheme: ThemeData.light().textTheme.copyWith(
+          toolbarTextStyle: ThemeData.light()
+              .textTheme
+              .copyWith(
                 titleMedium: const TextStyle(
                   fontFamily: 'OpenSans',
-                  fontSize: 20,
+                  fontSize: 30,
                 ),
-              ),
+              )
+              .bodyText2,
+          titleTextStyle: ThemeData.light()
+              .textTheme
+              .copyWith(
+                titleMedium: const TextStyle(
+                  fontFamily: 'OpenSans',
+                  fontSize: 30,
+                ),
+              )
+              .headline6,
+        ),
+        colorScheme: ColorScheme.fromSwatch(
+          primarySwatch: Colors.purple,
+        ).copyWith(
+          secondary: Colors.amber,
         ),
       ),
     );
@@ -40,7 +55,7 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key}) : super(key: key);
+  const MyHomePage({Key? key}) : super(key: key);
 
   @override
   State<MyHomePage> createState() => _MyHomePageState();
@@ -83,11 +98,11 @@ class _MyHomePageState extends State<MyHomePage> {
     }).toList();
   }
 
-  void _addNewTranscation(String txTitle, double txAmount) {
+  void _addNewTransaction(String txTitle, double txAmount, DateTime chosenDate) {
     final newTx = Transaction(
         amount: txAmount,
         title: txTitle,
-        date: DateTime.now(),
+        date: chosenDate,
         id: DateTime.now().toString());
 
     setState(() {
@@ -98,14 +113,21 @@ class _MyHomePageState extends State<MyHomePage> {
   void _startAddNewTransaction(BuildContext ctx) {
     showModalBottomSheet(
       context: ctx,
-      builder: (_) {
+      builder: (context) {
         return GestureDetector(
           onTap: () {},
           behavior: HitTestBehavior.opaque,
-          child: NewTransaction(addTx: _addNewTranscation),
+          child: NewTransaction(addTx: _addNewTransaction),
         );
       },
     );
+  }
+
+  // we normally delete things using an id
+  void _deleteTransaction(String id) {
+    setState(() {
+      _transactions.removeWhere((tx) => tx.id == id);
+    });
   }
 
   @override
@@ -115,7 +137,7 @@ class _MyHomePageState extends State<MyHomePage> {
           title: const Text('Personal Expenses'),
           actions: [
             IconButton(
-              icon: Icon(Icons.add),
+              icon: const Icon(Icons.add),
               onPressed: () {
                 _startAddNewTransaction(context);
               },
@@ -128,7 +150,10 @@ class _MyHomePageState extends State<MyHomePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Chart(_recentTransactions),
-              TransactionList(transactions: _transactions)
+              TransactionList(
+                transactions: _transactions,
+                deleteTx:  _deleteTransaction
+              )
             ],
           ),
         ),

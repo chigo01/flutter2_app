@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class NewTransaction extends StatefulWidget {
   NewTransaction({Key? key, required this.addTx}) : super(key: key);
@@ -10,20 +11,45 @@ class NewTransaction extends StatefulWidget {
 }
 
 class _NewTransactionState extends State<NewTransaction> {
-  final titleTextEditingController = TextEditingController();
+  final _titleTextEditingController = TextEditingController();
 
-  final amountTextEditingController = TextEditingController();
+  final _amountTextEditingController = TextEditingController();
+  DateTime? _selectedDate;
 
-  void submitData() {
-    final enteredTitle = titleTextEditingController.text;
-    final enteredAmount = double.parse(amountTextEditingController.text);
-
-    if (enteredTitle.isEmpty || enteredAmount <= 0) {
+  void _submitData() {
+    if(_amountTextEditingController.text.isEmpty){
       return;
     }
-    widget.addTx(enteredTitle, enteredAmount);
+    final enteredTitle = _titleTextEditingController.text;
+    final enteredAmount = double.parse(_amountTextEditingController.text);
+
+    if (enteredTitle.isEmpty || enteredAmount <= 0 || _selectedDate == null) {
+      return;
+    }
+    // widget.addTx(enteredTitle, enteredAmount);
+    //is used for parsing parameters for the function of the stateful class
+    widget.addTx(enteredTitle, enteredAmount, _selectedDate);
 
     Navigator.of(context).pop();
+  }
+
+  void _presentDatePicker() {
+    showDatePicker(
+            firstDate: DateTime(2022),
+            initialDate: DateTime.now(),
+            context: context,
+            lastDate: DateTime(
+                2023)) // it returns a future, so the then method is used to
+        .then(
+      (pickedDate) {
+        if (pickedDate == null) {
+          return;
+        }
+        setState(() {
+          _selectedDate = pickedDate;
+        });
+      },
+    );
   }
 
   @override
@@ -37,31 +63,54 @@ class _NewTransactionState extends State<NewTransaction> {
           children: [
             TextField(
               decoration: const InputDecoration(labelText: 'Title'),
-              controller: titleTextEditingController,
-              onSubmitted: (_) => submitData,
+              controller: _titleTextEditingController,
+              onSubmitted: (_) => _submitData,
               // onChanged: (val) {
               //   // titleInput = val;
               // },
             ),
             TextField(
               decoration: const InputDecoration(labelText: 'Amount'),
-              controller: amountTextEditingController,
+              controller: _amountTextEditingController,
               keyboardType: TextInputType.number,
-              onSubmitted: (_) => submitData,
+              onSubmitted: (_) => _submitData,
               // onChanged: (val) {
               //   // amountInput = val
               // },
             ),
-            TextButton(
+            Container(
+              height: 70,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      _selectedDate == null
+                          ? 'No Date chosen '
+                          : 'picked Date ${DateFormat.yMd().format(_selectedDate!)}',
+                    ),
+                  ),
+                  TextButton(
+                    onPressed: () {
+                      _presentDatePicker();
+                    },
+                    child: const Text(
+                      'Choose Date',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            ElevatedButton(
               style: TextButton.styleFrom(),
               onPressed: () {
                 // print(titleInput);
                 // print(amountInput);
-                submitData();
+                _submitData();
               },
               child: const Text(
                 'Add Transaction',
-                style: TextStyle(color: Colors.purple),
+                style: TextStyle(color: Colors.white),
               ),
             )
           ],
