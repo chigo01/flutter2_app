@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter2_app/model/transaction.dart';
@@ -5,6 +6,7 @@ import 'package:flutter2_app/widgets/chart.dart';
 import 'package:flutter2_app/widgets/new_transaction.dart';
 import 'package:flutter2_app/widgets/transcation_list.dart';
 import 'package:flutter2_app/widgets/user_transaction.dart';
+import 'dart:io';
 
 void main() {
   //disabling of landscape
@@ -70,32 +72,11 @@ class MyHomePage extends StatefulWidget {
 }
 
 class _MyHomePageState extends State<MyHomePage> {
-  // void _startAddNewTransaction(BuildContext context) {
-  //   showBottomSheet(
-  //       context: context,
-  //       builder: (_) {
-  //         return NewTransaction(
-  //           addTx: _addNewTranscation,
-  //         );
-  //       });
-  // }
+
 
   // String? titleInput;
 
-  final List<Transaction> _transactions = [
-    // Transaction(
-    //   id: 't1',
-    //   title: 'New shoe',
-    //   amount: 69.99,
-    //   date: DateTime.now(),
-    // ),
-    // Transaction(
-    //   id: 't2',
-    //   title: 'Weekly Groceries',
-    //   amount: 18.99,
-    //   date: DateTime.now(),
-    // )
-  ];
+  final List<Transaction> _transactions = [];
   bool _showChart = false;
 
   List<Transaction> get _recentTransactions {
@@ -143,6 +124,10 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
+    //rendering widget base on screen orientation
+    final isLandscape =
+        MediaQuery.of(context).orientation == Orientation.landscape;
+    final mediaQuery = MediaQuery.of(context);
     final appBar = AppBar(
       title: const Text('Personal Expenses'),
       actions: [
@@ -155,51 +140,69 @@ class _MyHomePageState extends State<MyHomePage> {
       ],
     );
 
-    return Scaffold(
-        appBar: appBar,
-        body: SingleChildScrollView(
-          child: Column(
-            // mainAxisAlignment: MainAxisAlignment.start,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
+    final txListWidget = Container(
+      //added the calculation to prevent scrollable
+      height: (mediaQuery.size.height -
+              appBar.preferredSize.height -
+              MediaQuery.of(context).padding.top) *
+          0.7, //70
+      child: TransactionList(
+          transactions: _transactions, deleteTx: _deleteTransaction),
+    );
+
+    final chartWidget = Container(
+      height: (mediaQuery.size.height -
+              appBar.preferredSize.height -
+              mediaQuery.padding.top) *
+          0.3, //30%
+      child: Chart(_recentTransactions),
+    );
+
+    final pageBody = SingleChildScrollView(
+      child: Column(
+        // mainAxisAlignment: MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          //u don't use curly braces for if statement inside a widget
+          if (isLandscape)
             Row(
               mainAxisAlignment: MainAxisAlignment.center,
-              children:  [
-            const Text('Show Chart'),
-              Switch(value: _showChart, onChanged: (bool value) {
-                setState(() {
-                  _showChart = value;
-                });
-              },),
-            ],),
-             _showChart ? Container(
-                height: (MediaQuery.of(context).size.height -
-                        appBar.preferredSize.height -
-                        MediaQuery.of(context).padding.top) *
-                    0.39, //30%
-                child: Chart(_recentTransactions),
+              children: [
+                const Text('Show Chart'),
+                Switch.adaptive(
+                  value: _showChart,
+                  onChanged: (bool value) {
+                    setState(() {
+                      _showChart = value;
+                    });
+                  },
+                ),
+              ],
+            ),
+          if (!isLandscape) chartWidget,
 
-              ) :
-
-              Container(
-                //added the calculation to prevent scrollable
-                height: (MediaQuery.of(context).size.height -
-                        appBar.preferredSize.height -
-                        MediaQuery.of(context).padding.top) *
-                    0.7, //70
-                child: TransactionList(
-                    transactions: _transactions, deleteTx: _deleteTransaction),
-              )
-
-            ],
-          ),
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerFloat,
-        floatingActionButton: FloatingActionButton(
-          onPressed: () {
-            _startAddNewTransaction(context);
-          },
-          child: const Icon(Icons.add),
-        ));
+          if (!isLandscape) txListWidget,
+          if (isLandscape) _showChart ? chartWidget : txListWidget,
+        ],
+      ),
+    );
+    return Platform.isIOS
+        ? CupertinoPageScaffold(
+            child: pageBody,
+          )
+        : Scaffold(
+            appBar: appBar,
+            body: pageBody,
+            floatingActionButtonLocation:
+                FloatingActionButtonLocation.centerFloat,
+            floatingActionButton: Platform.isIOS
+                ? Container()
+                : FloatingActionButton(
+                    onPressed: () {
+                      _startAddNewTransaction(context);
+                    },
+                    child: const Icon(Icons.add),
+                  ),
+          );
   }
 }
